@@ -1,4 +1,4 @@
-#/usr/bin/perl -w
+#!/usr/bin/perl -w
 use Algorithm::Combinatorics qw(combinations);
 use strict;
 use Getopt::Long;
@@ -82,7 +82,7 @@ while (my$line=<PRIMERPROBE>){
 
 open(PRIMERPROBE,"<$primerProbeFile")||die "cannot open $primerProbeFile:$!";
 
-my$primerProbeHeader=<PRIMERPROBE>;
+$primerProbeHeader=<PRIMERPROBE>;
 chomp $primerProbeHeader;
 
 #get number of columns in primer probe file, use this to check if correction factors were used
@@ -413,7 +413,7 @@ foreach my$seqFile (@sequenceFiles){
 					#look into storing haplotypes that do not have correct length.
 					#haplotypes with incorrect lengths are expected due to sequencing errors
 					#high proportions of incorrect lengths could be due to systemic problems with probes
-					if(length($haplotypeAlleleMatch) == $haplotypeLengths{$IDkey}){
+					if( exists( $haplotypeLengths{$IDkey} ) ){
 						$haplotypeCounts{$sampleID}{$IDkey}{$haplotypeAlleleMatch}+=$uniqueSeqCount;
 					}
 				}
