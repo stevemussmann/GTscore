@@ -407,13 +407,13 @@ foreach my$seqFile (@sequenceFiles){
 							}
 						}
 					}
-					
 					#Test if the length of the haplotype allele matches the expected haplotype length
 					#If matched, add sequence count to haplotype allele for the matched locus
 					#look into storing haplotypes that do not have correct length.
 					#haplotypes with incorrect lengths are expected due to sequencing errors
 					#high proportions of incorrect lengths could be due to systemic problems with probes
-					if( exists( $haplotypeLengths{$IDkey} ) ){
+					## Steve Mussmann edit - I edited the next line because I was receiving error "Use of uninitialized value $haplotypeAlleleMatch in hash element at AmpliconReadCounter.pl line 417.
+					if( defined($haplotypeAlleleMatch && length($haplotypeAlleleMatch) == $haplotypeLengths{$IDkey} ) ){
 						$haplotypeCounts{$sampleID}{$IDkey}{$haplotypeAlleleMatch}+=$uniqueSeqCount;
 					}
 				}
