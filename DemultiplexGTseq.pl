@@ -6,7 +6,8 @@
 
 use strict;
 use Getopt::Long;
-use PerlIO::gzip;
+use PerlIO::gzip; # in ubuntu, package name = libperlio-gzip-perl
+use IO::Uncompress::Gunzip qw(gunzip $GunzipError); # had to use this one to unzip files written by bcl2fastq properly
 
 #--------------------------------------------------------------------------------
 #Demultiplex.pl
@@ -82,7 +83,7 @@ foreach my$barcode (sort keys %barcodes){
 my $SEQUENCE; # file handle for reading fastq file
 
 if( $sequenceFile =~ /\.gz$/ ){
-	open( $SEQUENCE, "<:gzip", $sequenceFile );
+	$SEQUENCE = IO::Uncompress::Gunzip->new($sequenceFile, MultiStream => 1) or die "gunzip failed: $GunzipError\n"; # multistream needed to read fastq files output by bcl2fastq properly
 }elsif( $sequenceFile =~ /\.(fq|fastq)$/ ){
 	open( $SEQUENCE, '<', $sequenceFile ) or die "cannot open $sequenceFile: $!\n\n";
 }else{
