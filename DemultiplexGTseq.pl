@@ -124,12 +124,19 @@ while(my$seqID=<$SEQUENCE>){
 			my$outFile=$barcodes{$barcode}.".fastq.gz";
 			my $OUTFILE; # filehandle
 			open( $OUTFILE, ">>:gzip", $outFile ) or die "cannot open $outFile:$!";
-			print $OUTFILE $barcode_seqs{$barcode};
+			# check if barcode detected during $interval before writing to file
+			if( exists( $barcode_seqs{$barcode} ) ){
+				print $OUTFILE $barcode_seqs{$barcode};
+			}
 			close $OUTFILE;
 			#count reads for retained sequences
 			#reads have been concatenated so can't be counted directly
 			#need to count number of newlines and divide by four
-			my$counts=$barcode_seqs{$barcode}=~tr/\n//;
+			# check if barcode detected during $interval before counting line breaks
+			my $counts = 0;
+			if( exists( $barcode_seqs{$barcode} ) ){
+				$counts=$barcode_seqs{$barcode}=~tr/\n//;
+			}
 			$retainedReads+=$counts/4;
 			#add counts of retained barcode to hash
 			$retainedBarcodeHash{$barcode}+=$counts/4;
@@ -142,7 +149,7 @@ while(my$seqID=<$SEQUENCE>){
 			#count reads for retained sequences
 			#reads have been concatenated so can't be counted directly
 			#need to count number of newlines and divide by four
-			my$counts=$barcode_seqs{$unmatched}=~tr/\n//;
+			my $counts=$barcode_seqs{$unmatched}=~tr/\n//;
 			$discardedReads+=$counts/4;
 			#add counts of discarded barcode to hash
 			$discardedBarcodeHash{$unmatched}+=$counts/4;
@@ -165,10 +172,15 @@ close $SEQUENCE;
 foreach my$barcode (sort keys %barcodes){
 	my$outFile=$barcodes{$barcode}.".fastq.gz";
 	open(OUTFILE,">>:gzip", $outFile)||die "cannot open $outFile:$!";
-	print OUTFILE $barcode_seqs{$barcode};
+	if( exists( $barcode_seqs{$barcode} ) ){
+		print OUTFILE $barcode_seqs{$barcode};
+	}
 	close OUTFILE;
 	#count retained reads
-	my$counts=$barcode_seqs{$barcode}=~tr/\n//;
+	my $counts = 0;
+	if( exists( $barcode_seqs{$barcode} ) ){
+		$counts=$barcode_seqs{$barcode}=~tr/\n//;
+	}
 	$retainedReads+=$counts/4;
 	#add counts of retained barcode to hash
 	$retainedBarcodeHash{$barcode}+=$counts;
