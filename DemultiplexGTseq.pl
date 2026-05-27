@@ -6,6 +6,7 @@
 
 use strict;
 use Getopt::Long;
+use PerlIO::gzip;
 
 #--------------------------------------------------------------------------------
 #Demultiplex.pl
@@ -51,8 +52,8 @@ GetOptions('b=s' => \$barcodeFile, 's=s' => \$sequenceFile);
 
 #create empty file for discarded reads
 my($seqFileName,$ext)=split '\.', $sequenceFile, 2;
-my$discardFile=$seqFileName."_discarded.fastq";
-open(DISCARDED, ">$discardFile")||die "cannot open $discardFile:$!";
+my$discardFile=$seqFileName."_discarded.fastq.gz";
+open(DISCARDED, ">:gzip", $discardFile)||die "cannot open $discardFile:$!";
 
 #open barcode file and store information in hash
 open(BARCODES,"<$barcodeFile")||die "cannot open $barcodeFile:$!";
@@ -73,12 +74,20 @@ close BARCODES;
 #create sequence file for demultiplexing
 #these will be written to when parsing the sequence data
 foreach my$barcode (sort keys %barcodes){
-	my$outFile=$barcodes{$barcode}.".fastq";
-	open(OUTFILE,">$outFile")||die "cannot open $outFile:$!";
+	my$outFile=$barcodes{$barcode}.".fastq.gz";
+	open(OUTFILE,">:gzip", $outFile)||die "cannot open $outFile:$!";
 	close OUTFILE;
 }
 
-open(SEQUENCE,"<$sequenceFile")||die "cannot open $sequenceFile:$!";
+my $SEQUENCE; # file handle for reading fastq file
+
+if( $sequenceFile =~ /\.gz$/ ){
+	open( $SEQUENCE, "<:gzip", $sequenceFile );
+}elsif( $sequenceFile =~ /\.(fq|fastq)$/ ){
+	open( $SEQUENCE, '<', $sequenceFile ) or die "cannot open $sequenceFile: $!\n\n";
+}else{
+	die "File extension for sequence file must be .gz, .fq, or .fastq.\n\n";
+}
 my%barcode_seqs;
 my$interval=0;
 my$seqCount=0;
@@ -88,10 +97,10 @@ my%retainedBarcodeHash;
 my%discardedBarcodeHash;
 my$startTime=time;
 my$lastTime=time;
-while(my$seqID=<SEQUENCE>){
-	my$sequence=<SEQUENCE>;
-	my$plus=<SEQUENCE>;
-	my$qual=<SEQUENCE>;
+while(my$seqID=<$SEQUENCE>){
+	my$sequence=<$SEQUENCE>;
+	my$plus=<$SEQUENCE>;
+	my$qual=<$SEQUENCE>;
 	chomp $seqID;
 	chomp $sequence;
 	chomp $plus;
@@ -111,10 +120,11 @@ while(my$seqID=<SEQUENCE>){
 	if($interval==1000000){
 		#print sequences that matched sample barcode
 		foreach my$barcode (sort keys %barcodes){
-			my$outFile=$barcodes{$barcode}.".fastq";
-			open(OUTFILE,">>$outFile")||die "cannot open $outFile:$!";
-			print OUTFILE $barcode_seqs{$barcode};
-			close OUTFILE;
+			my$outFile=$barcodes{$barcode}.".fastq.gz";
+			my $OUTFILE; # filehandle
+			open( $OUTFILE, ">>:gzip", $outFile ) or die "cannot open $outFile:$!";
+			print $OUTFILE $barcode_seqs{$barcode};
+			close $OUTFILE;
 			#count reads for retained sequences
 			#reads have been concatenated so can't be counted directly
 			#need to count number of newlines and divide by four
@@ -147,13 +157,13 @@ while(my$seqID=<SEQUENCE>){
 	##printing progress for each read doubles run time
 	#print "Reads Processed: $seqCount\r";
 }
-close SEQUENCE;
+close $SEQUENCE;
 
 
 #print last sequences that matched sample barcode
 foreach my$barcode (sort keys %barcodes){
-	my$outFile=$barcodes{$barcode}.".fastq";
-	open(OUTFILE,">>$outFile")||die "cannot open $outFile:$!";
+	my$outFile=$barcodes{$barcode}.".fastq.gz";
+	open(OUTFILE,">>:gzip", $outFile)||die "cannot open $outFile:$!";
 	print OUTFILE $barcode_seqs{$barcode};
 	close OUTFILE;
 	#count retained reads
@@ -228,3 +238,5 @@ close DISCARDEDSUMMARY;
 my$endTime=time;
 my$totalTime=$endTime-$startTime;
 print "Total Time: $totalTime\n";
+
+exit;
